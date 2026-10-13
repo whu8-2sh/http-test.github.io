@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理年龄测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        magic: '#8b5cf6',
+                        magicDark: '#110f22',
+                        magicMid: '#201b42',
+                        magicLight: '#c4b5fd'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .magic-card {
+                background: linear-gradient(145deg, rgba(32,27,66,0.85), rgba(17,15,34,0.92));
+                box-shadow: 0 0 30px rgba(139, 92, 246, 0.2), inset 0 0 1px rgba(196,181,253,0.2);
+                border: 1px solid rgba(196,181,253,0.15);
+            }
+            .magic-option{
+                transition: all 0.4s ease;
+                background:rgba(255,255,255,0.03);
+                border:1px solid rgba(196,181,253,0.12);
+            }
+            .magic-option:hover{
+                border-color:rgba(139, 92, 246,0.6);
+                background:rgba(139, 92, 246,0.1);
+                box-shadow:0 0 12px rgba(139, 92, 246,0.25);
+            }
+            .magic-option.active{
+                border-color:#8b5cf6;
+                background:linear-gradient(90deg, rgba(139,92,246,0.25),rgba(139,92,246,0.08));
+                box-shadow:0 0 16px rgba(139, 92, 246,0.35);
+            }
+            .magic-btn{
+                background: linear-gradient(90deg,#8b5cf6,#7c3aed);
+                box-shadow:0 0 15px rgba(139, 92, 246,0.3);
+                transition: all 0.3s ease;
+            }
+            .magic-btn:hover{
+                box-shadow:0 0 22px rgba(139, 92, 246,0.45);
+                transform: translateY(-2px);
+            }
+            .magic-fade-in{
+                animation: fadeIn 0.6s ease-out;
+            }
+            @keyframes fadeIn {
+                from {opacity:0; transform: translateY(14px);}
+                to {opacity:1; transform: translateY(0);}
+            }
+            .star-bg{
+                background-color:#110f22;
+                background-image:
+                    radial-gradient(rgba(196,181,253,0.08) 1px, transparent 1px),
+                    radial-gradient(rgba(196,181,253,0.04) 1px, transparent 1px);
+                background-size: 30px 30px, 60px 60px;
+                background-position: 0 0, 15px 15px;
+            }
+            .progress-glow{
+                box-shadow:0 0 8px #8b5cf6;
+            }
+        }
+    </style>
+</head>
+<body class="star-bg min-h-screen text-gray-100">
+    <div class="max-w-2xl mx-auto px-4 py-10">
+        <!-- 首页 -->
+        <div id="page-start" class="magic-fade-in">
+            <div class="magic-card rounded-2xl p-8 mt-6">
+                <h1 class="text-[clamp(2rem,9vw,3rem)] font-bold text-center text-magicLight mb-3 tracking-wide">心理年龄测试</h1>
+                <p class="text-gray-400 text-center mb-8">探索心智内核，看见内在真实成熟度</p>
+                <div class="mb-6">
+                    <label class="block text-gray-300 mb-2 font-medium">请填写你的实际年龄</label>
+                    <input id="realAge" type="number" min="12" max="85" placeholder="例如：26"
+                           class="w-full bg-white/5 border border-magic/30 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-magicLight">
+                </div>
+                <div class="text-gray-400 text-sm mb-8 space-y-2">
+                    <p>📜 测评说明</p>
+                    <p>共30道自评题目，请依照你真实的反应选择，答案无好坏之分。完成测评后，系统将计算你的心理年龄，对比实际年龄差值，并提供多维度心智分析与成长建议。</p>
+                    <p class="text-rose-300/80">⚠️声明：本测评仅用于自我觉察，不属于临床心理量表，不可作为心理诊断依据。</p>
+                </div>
+                <button onclick="startTest()"
+                        class="magic-btn w-full text-white py-3 rounded-lg font-medium">
+                    开启测评
+                </button>
+            </div>
+        </div>
+
+        <!-- 答题页 -->
+        <div id="page-questions" class="hidden magic-fade-in">
+            <div class="magic-card rounded-2xl p-6 mt-6">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="font-medium text-magicLight">题目 <span id="currentNum">1</span>/30</span>
+                    <div class="w-36 h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-magic rounded-full progress-glow transition-all duration-500" style="width:3.33%"></div>
+                    </div>
+                </div>
+                <h2 id="question-title" class="text-lg font-medium mb-8 leading-relaxed"></h2>
+                <div id="options-box" class="space-y-4">
+                    <!--选项渲染-->
+                </div>
+                <div class="mt-10 flex gap-4">
+                    <button onclick="prevQuestion()" id="btn-prev"
+                            class="w-1/2 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition-all">上一题</button>
+                    <button onclick="nextQuestion()"
+                            class="magic-btn w-1/2 py-3 rounded-lg font-medium">下一题</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果报告页 -->
+        <div id="page-result" class="hidden magic-fade-in">
+            <div class="magic-card rounded-2xl p-8 mt-6">
+                <h2 class="text-2xl font-bold text-center text-magicLight mb-6">你的心智测评报告</h2>
+                <div class="text-center mb-10">
+                    <p class="text-gray-300">实际年龄：<span id="result-real" class="font-semibold text-lg"></span> 岁</p>
+                    <p class="mt-3 text-gray-300">心理年龄：<span id="result-mental" class="text-4xl font-bold text-magicLight"></span> 岁</p>
+                    <p class="mt-3 text-gray-300">年龄差值：<span id="result-diff" class="font-semibold text-magicLight"></span></p>
+                </div>
+                <div class="border-t border-white/10 pt-6 space-y-4">
+                    <div>
+                        <h3 class="font-bold text-magicLight mb-2">🔮 结果解读</h3>
+                        <div id="result-diff-text" class="text-gray-300 leading-relaxed"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-magicLight mb-2">✨ 你的心智优势</h3>
+                        <div id="result-strength" class="text-gray-300 leading-relaxed"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-magicLight mb-2">🌫 内在卡点</h3>
+                        <div id="result-problem" class="text-gray-300 leading-relaxed"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-magicLight mb-2">📖 成长方向建议</h3>
+                        <div id="result-suggest" class="text-gray-300 leading-relaxed"></div>
+                    </div>
+                </div>
+                <button onclick="restartTest()"
+                        class="magic-btn w-full mt-10 py-3 rounded-lg font-medium">
+                    重新测评
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 重构专业题库，7个维度：情绪调节、认知弹性、压力应对、自我认同、人际边界、时间观、价值接纳 ==========
+        const questionList = [
+            {
+                q:"当你收到他人带有否定意味的批评，你的第一反应更接近？",
+                o:[
+                    {txt:"A. 感到委屈、被攻击，下意识想要辩解反驳",score:1},
+                    {txt:"B. 心里不快，需要一段时间平复情绪，之后才会思考内容",score:2},
+                    {txt:"C. 先区分评价是否客观，有用部分接纳，不合理的部分放下",score:4},
+                    {txt:"D. 直接无视，认为对方不了解自己，不必在意",score:3}
+                ]
+            },
+            {
+                q:"当原定重要计划被突发意外完全打乱时，你通常？",
+                o:[
+                    {txt:"A. 烦躁焦虑，很长一段时间无法安心做其他事",score:1},
+                    {txt:"B. 感到失落，但会慢慢调整，重新安排方案",score:2},
+                    {txt:"C. 接纳不确定性，快速评估现状，寻找替代方案",score:4},
+                    {txt:"D. 顺其自然，不做任何调整，等待事情自行发展",score:3}
+                ]
+            },
+            {
+                q:"回顾过往的遗憾与选择失误，你更常？",
+                o:[
+                    {txt:"A. 反复回想，陷入自责与“如果当初”的内耗",score:1},
+                    {txt:"B. 偶尔想起，带有惋惜情绪，但不会长期纠缠",score:2},
+                    {txt:"C. 将经历视作学习素材，接纳无法改变的过去",score:4},
+                    {txt:"D. 刻意回避回忆，不愿触碰这类不愉快的往事",score:3}
+                ]
+            },
+            {
+                q:"面对亲密关系中的冲突争执，你倾向于？",
+                o:[
+                    {txt:"A. 情绪上头，说出伤人的话，等待对方主动妥协",score:1},
+                    {txt:"B. 先暂停，等情绪降温之后，再沟通问题",score:2},
+                    {txt:"C. 聚焦矛盾本身，沟通诉求，寻找双方可接受的解决方式",score:4},
+                    {txt:"D. 回避争吵，冷处理，期待矛盾自行消失",score:3}
+                ]
+            },
+            {
+                q:"当身边朋友持续向你倾诉大量负面情绪，你会？",
+                o:[
+                    {txt:"A. 被对方情绪感染，跟着陷入低落",score:1},
+                    {txt:"B. 尽力安慰，但长时间之后会感到心理疲惫",score:2},
+                    {txt:"C. 保持共情倾听，同时守住自己的情绪边界",score:4},
+                    {txt:"D. 希望对方停止倾诉，不要持续传递负能量",score:3}
+                ]
+            },
+            {
+                q:"对于和自己原有观念不一样的新观点，你一般？",
+                o:[
+                    {txt:"A. 本能排斥，坚持自己原有想法",score:1},
+                    {txt:"B. 好奇，但会保持谨慎观望，不会轻易认同",score:2},
+                    {txt:"C. 愿意理性了解，依据事实判断，不固守成见",score:4},
+                    {txt:"D. 无所谓，观点差异不会引起我的关注",score:3}
+                ]
+            },
+            {
+                q:"在做重大人生选择时，你的状态更接近？",
+                o:[
+                    {txt:"A. 依靠直觉快速决定，较少考虑长期后果",score:1},
+                    {txt:"B. 反复纠结摇摆，害怕做出错误选择",score:2},
+                    {txt:"C. 收集信息权衡利弊，承担选择带来的结果",score:4},
+                    {txt:"D. 倾向交给家人、信任的人帮自己做决定",score:3}
+                ]
+            },
+            {
+                q:"当你经历失败或目标落空，你的想法是？",
+                o:[
+                    {txt:"A. 认定是自己能力不足，产生强烈自我否定",score:1},
+                    {txt:"B. 难过一段时间，慢慢从低谷恢复状态",score:2},
+                    {txt:"C. 区分可控因素与不可控因素，从中总结经验",score:4},
+                    {txt:"D. 更多归因外部环境，不是自身的问题",score:3}
+                ]
+            },
+            {
+                q:"你如何看待他人比你优秀，取得更好的成果？",
+                o:[
+                    {txt:"A. 内心不平衡，产生嫉妒感",score:1},
+                    {txt:"B. 心生羡慕，以此激励自己努力",score:2},
+                    {txt:"C. 欣赏对方，专注自身节奏，不做横向对比",score:4},
+                    {txt:"D. 事不关己，不会产生太多情绪波动",score:3}
+                ]
+            },
+            {
+                q:"当你感受到持续高压、身心疲惫时，你会？",
+                o:[
+                    {txt:"A. 压抑情绪硬扛，直到情绪崩溃",score:1},
+                    {txt:"B. 通过刷短视频、娱乐短暂逃避压力",score:2},
+                    {txt:"C. 主动觉察状态，用稳定方式调节、必要时减负",score:4},
+                    {txt:"D. 放任不管，等待压力自然消退",score:3}
+                ]
+            },
+            {
+                q:"你如何看待独处的时光？",
+                o:[
+                    {txt:"A. 害怕独处，独处容易感到空虚不安",score:1},
+                    {txt:"B. 偶尔需要独处休息，长时间独自待着会孤单",score:2},
+                    {txt:"C. 享受独处，用于自我觉察、整理思绪",score:4},
+                    {txt:"D. 独处时容易胡思乱想，引发焦虑",score:3}
+                ]
+            },
+            {
+                q:"被他人误解，且对方不愿听你解释时，你通常？",
+                o:[
+                    {txt:"A. 急切反复辩解，一定要澄清误会",score:1},
+                    {txt:"B. 找合适时机尝试说明，不行就暂时搁置",score:2},
+                    {txt:"C. 接纳无法被所有人理解，不强求说服对方",score:4},
+                    {txt:"D. 直接疏远对方，不再沟通",score:3}
+                ]
+            },
+            {
+                q:"关于长期的人生规划，你更接近哪一种？",
+                o:[
+                    {txt:"A. 很少思考未来，走一步看一步，不做规划",score:1},
+                    {txt:"B. 有一些模糊想法，缺少可落地的行动计划",score:2},
+                    {txt:"C. 有中长期目标，能持续行动，也接受计划调整",score:4},
+                    {txt:"D. 经常担忧未来，被不确定性带来的焦虑困扰",score:3}
+                ]
+            },
+            {
+                q:"对于向别人求助这件事，你的感受是？",
+                o:[
+                    {txt:"A. 很难开口求助，觉得求助代表软弱",score:1},
+                    {txt:"B. 纠结很久，实在没办法才开口请求帮助",score:2},
+                    {txt:"C. 坦然表达需求，理解人与人之间可以互相支持",score:4},
+                    {txt:"D. 尽量拒绝任何人的帮助，习惯独自承担一切",score:3}
+                ]
+            },
+            {
+                q:"你对自己许下的承诺，或是答应别人的事，一般？",
+                o:[
+                    {txt:"A. 随口应允，后续能否兑现不一定",score:1},
+                    {txt:"B. 尽力完成，遇到重大阻碍才会放弃",score:2},
+                    {txt:"C. 不轻易许诺，一旦承诺会尽力践行",score:4},
+                    {txt:"D. 害怕做出承诺，倾向不给出确定约定",score:3}
+                ]
+            },
+            {
+                q:"你会不会持续在意别人对你的评价？",
+                o:[
+                    {txt:"A. 非常在意，他人看法会强烈影响自我感受",score:1},
+                    {txt:"B. 会在意，容易被他人评价牵动情绪",score:2},
+                    {txt:"C. 参考外界反馈，但自我价值感主要来自内在",score:4},
+                    {txt:"D. 完全不在乎任何人的评价",score:3}
+                ]
+            },
+            {
+                q:"面对生活里细碎、繁琐的小事麻烦，你？",
+                o:[
+                    {txt:"A. 烦躁抱怨，本能抗拒处理",score:1},
+                    {txt:"B. 拖着，直到不得不处理才硬着头皮解决",score:2},
+                    {txt:"C. 平静处理，不被小事消耗大量心理能量",score:4},
+                    {txt:"D. 放任搁置，期待问题自动消失",score:3}
+                ]
+            },
+            {
+                q:"对于人生中不可避免的离别，你的心态是？",
+                o:[
+                    {txt:"A. 难以接受，会陷入长时间悲伤",score:1},
+                    {txt:"B. 感到伤感，一段时间后慢慢释怀",score:2},
+                    {txt:"C. 理解聚散是常态，珍惜相遇的过程",score:4},
+                    {txt:"D. 刻意避开离别场景，不去思考这件事",score:3}
+                ]
+            },
+            {
+                q:"在团队意见分歧的时候，你更倾向？",
+                o:[
+                    {txt:"A. 坚持自己观点，不愿让步妥协",score:1},
+                    {txt:"B. 为避免冲突，主动退让，压抑想法",score:2},
+                    {txt:"C. 沟通协商，寻找兼顾多方的可行方案",score:4},
+                    {txt:"D. 不想参与争论，直接退出讨论",score:3}
+                ]
+            },
+            {
+                q:"当你做出一个重要决定之后，你容易？",
+                o:[
+                    {txt:"A. 反复怀疑，不断后悔自己的选择",score:1},
+                    {txt:"B. 偶尔怀疑，但不会推翻已经做好的选择",score:2},
+                    {txt:"C. 接纳选择带来的结果，承担相应责任",score:4},
+                    {txt:"D. 即使发现选错，也不愿承认",score:3}
+                ]
+            },
+            {
+                q:"你看待金钱消费的底层观念是？",
+                o:[
+                    {txt:"A. 喜欢就消费，优先当下的体验满足",score:1},
+                    {txt:"B. 大体克制，偶尔冲动消费",score:2},
+                    {txt:"C. 理性规划收支，平衡当下消费与长期储备",score:4},
+                    {txt:"D. 极度节俭，舍不得为自己合理投入",score:3}
+                ]
+            },
+            {
+                q:"当你察觉到自己有缺点、不足时，你会？",
+                o:[
+                    {txt:"A. 回避，不愿承认自己存在短板",score:1},
+                    {txt:"B. 知道存在不足，但很难持续做出改变",score:2},
+                    {txt:"C. 接纳不完美，循序渐进调整自己",score:4},
+                    {txt:"D. 持续自我批判，放大自身缺陷",score:3}
+                ]
+            },
+            {
+                q:"你对于幻想、理想化的美好未来，态度是？",
+                o:[
+                    {txt:"A. 经常沉浸幻想，脱离现实期待美好",score:1},
+                    {txt:"B. 偶尔畅想，作为精神期待",score:2},
+                    {txt:"C. 保有理想，同时立足于现实制定行动",score:4},
+                    {txt:"D. 认为幻想毫无意义，拒绝一切理想化想象",score:3}
+                ]
+            },
+            {
+                q:"当你感受到被群体忽视，你的内心感受？",
+                o:[
+                    {txt:"A. 失落难过，认为自己不被重视",score:1},
+                    {txt:"B. 轻微不舒服，但很快平复情绪",score:2},
+                    {txt:"C. 理解每个人重心不同，平常心看待",score:4},
+                    {txt:"D. 心生不悦，主动远离这个群体",score:3}
+                ]
+            },
+            {
+                q:"在亲密关系里，你更向往哪种状态？",
+                o:[
+                    {txt:"A. 高度黏合，时刻被关注、被偏爱",score:1},
+                    {txt:"B. 温暖陪伴，互相迁就包容",score:2},
+                    {txt:"C. 彼此独立，相互支撑，共同成长",score:4},
+                    {txt:"D. 不太愿意投入深度亲密关系",score:3}
+                ]
+            },
+            {
+                q:"身体疲惫、精力透支时，你一般会？",
+                o:[
+                    {txt:"A. 硬撑继续做事，忽视身体信号",score:1},
+                    {txt:"B. 短暂休息，没有系统性恢复节奏",score:2},
+                    {txt:"C. 主动停下休息，重视身心的养护",score:4},
+                    {txt:"D. 依靠熬夜、刺激性方式强行提神",score:3}
+                ]
+            },
+            {
+                q:"回忆过往，你是否长期沉浸怀旧，怀念过去？",
+                o:[
+                    {txt:"A. 经常怀念过去，觉得过去比现在更好",score:1},
+                    {txt:"B. 看到相关事物会产生怀旧情绪",score:2},
+                    {txt:"C. 接纳过去，重心放在当下的生活",score:4},
+                    {txt:"D. 排斥回忆，觉得回忆是负担",score:3}
+                ]
+            },
+            {
+                q:"你如何看待不确定性与生活里无法掌控的部分？",
+                o:[
+                    {txt:"A. 强烈恐惧，希望一切事情都可控",score:1},
+                    {txt:"B. 感到不安，尽量规避未知变化",score:2},
+                    {txt:"C. 接纳生活本就充满不确定，学会适应变化",score:4},
+                    {txt:"D. 无所谓，不去思考可控不可控这件事",score:3}
+                ]
+            },
+            {
+                q:"在多人集体讨论中，你通常扮演的角色？",
+                o:[
+                    {txt:"A. 活跃带动气氛，表达想法，吸引关注",score:1},
+                    {txt:"B. 跟随群体，不主动发表不同意见",score:2},
+                    {txt:"C. 理性观察，适时提出客观思考与建议",score:4},
+                    {txt:"D. 安静旁观，不参与讨论和表达",score:3}
+                ]
+            },
+            {
+                q:"综合来看，你看待人生的底色更接近？",
+                o:[
+                    {txt:"A. 天真乐观，默认世界大多是善意美好的",score:1},
+                    {txt:"B. 喜忧交织，情绪随境遇起伏变化",score:2},
+                    {txt:"C. 看清现实复杂，依旧选择认真生活",score:4},
+                    {txt:"D. 偏向悲观，更容易看见事情负面一面",score:3}
+                ]
+            }
+        ];
+
+        let current = 0;
+        let answers = Array(questionList.length).fill(null);
+        let totalScore = 0;
+        let realAgeVal = 0;
+
+        function startTest(){
+            const inputAge = document.getElementById("realAge").value;
+            if(!inputAge || inputAge <12 || inputAge>85){
+                alert("请输入12~85之间有效的实际年龄");
+                return;
+            }
+            realAgeVal = parseInt(inputAge);
+            document.getElementById("page-start").classList.add("hidden");
+            document.getElementById("page-questions").classList.remove("hidden");
+            renderQuestion();
+        }
+
+        function renderQuestion(){
+            const item = questionList[current];
+            document.getElementById("currentNum").innerText = current+1;
+            document.getElementById("question-title").innerText = item.q;
+            const box = document.getElementById("options-box");
+            box.innerHTML = "";
+            item.o.forEach((opt,idx)=>{
+                const div = document.createElement("div");
+                const selected = answers[current] === idx;
+                div.className = `magic-option rounded-lg p-4 cursor-pointer ${selected ? 'active' : ''}`;
+                div.onclick = ()=>{
+                    answers[current] = idx;
+                    renderQuestion();
+                }
+                div.innerText = opt.txt;
+                box.appendChild(div);
+            })
+            const progress = ((current+1)/30)*100;
+            document.getElementById("progressBar").style.width = progress+"%";
+            document.getElementById("btn-prev").style.visibility = current === 0 ? 'hidden' : 'visible';
+        }
+
+        function prevQuestion(){
+            if(current>0){
+                current--;
+                renderQuestion();
+            }
+        }
+        function nextQuestion(){
+            if(answers[current] === null){
+                alert("请选择符合你真实状态的选项");
+                return;
+            }
+            if(current < questionList.length-1){
+                current++;
+                renderQuestion();
+            }else{
+                calcResult();
+            }
+        }
+
+        function calcResult(){
+            totalScore = 0;
+            answers.forEach((ansIdx,i)=>{
+                totalScore += questionList[i].o[ansIdx].score;
+            })
+            //分数映射心理年龄：最低30分，最高120分，心理年龄区间12~72岁
+            const mentalAge = Math.round(12 + (totalScore - 30)/(120-30)*(72-12));
+            const diff = mentalAge - realAgeVal;
+
+            document.getElementById("page-questions").classList.add("hidden");
+            document.getElementById("page-result").classList.remove("hidden");
+            document.getElementById("result-real").innerText = realAgeVal;
+            document.getElementById("result-mental").innerText = mentalAge;
+            if(diff>0){
+                document.getElementById("result-diff").innerText = `心理年龄高于实际年龄 ${diff} 岁`;
+            }else if(diff<0){
+                document.getElementById("result-diff").innerText = `心理年龄低于实际年龄 ${Math.abs(diff)} 岁`;
+            }else{
+                document.getElementById("result-diff").innerText = `心理年龄与实际年龄一致`;
+            }
+
+            let diffText,strength,problem,suggest;
+            if(diff >=12){
+                diffText = "你的心智成熟度显著高于生理年龄，属于超前成熟型。你经历过较多内在沉淀，拥有较强的情绪隔离与理性思考能力，能看透很多事物本质。";
+                strength = "情绪稳定性强；擅长延迟满足；接纳无常；独立做决策，不容易被他人评价裹挟，拥有稳定的内在价值观。";
+                problem = "容易习惯性承担过多责任，习惯压抑脆弱感受；容易对身边人产生过高期待，难以包容他人的不成熟；偶尔会感到孤独，很难找到同频倾诉对象。";
+                suggest = "练习允许自己展现脆弱，不必时刻维持强大理性；区分“需要承担的责任”和“替别人背负的情绪”；适当保留轻松、好奇的少年感，减少过度思虑。";
+            }else if(diff >=4 && diff <12){
+                diffText = "你的心智略高于实际年龄，属于稳步成熟类型。你具备超出同龄基础水平的情绪觉察，遇到问题不容易冲动，有不错的自省能力。";
+                strength = "拥有较好压力调节能力；懂得换位思考；可以平衡感性感受和理性判断；有基本长期规划意识，愿意为目标持续付出。";
+                problem = "容易思虑过重，习惯性预判风险，产生不必要内耗；偶尔会克制自身需求，优先顾及他人感受；很难完全放松。";
+                suggest = "练习区分“风险预判”和“灾难化想象”；学习优先照顾自身需求；定期留出无目的、纯粹放松的时间，不用时刻要求自己成长。";
+            }else if(diff >=-3 && diff <=3){
+                diffText = "你的心理年龄与实际年龄高度匹配，心智发展处于均衡健康状态。你的成熟度贴合当前人生阶段，既有对应年纪的判断力，也保有这个阶段的生命力。";
+                strength = "情绪弹性良好；接纳自我优势与短板；可以在理性与感性之间灵活切换；既能享受当下，也可以为未来做准备。";
+                problem = "没有明显短板，但遇到重大挫折时，抗压能力会短暂下降；在重大抉择时，偶尔会犹豫摇摆。";
+                suggest = "继续维持自我觉察习惯；建立属于自己的支持系统，遇到困境可以向信任的人求助；持续拓展认知边界。";
+            }else if(diff >-12 && diff < -3){
+                diffText = "你的心理年龄略低于实际年龄，内心保有珍贵的少年感。你感受力丰富，容易感知生活微小美好，对世界抱有善意。";
+                strength = "想象力丰富；共情力强；对新鲜事物保有热情；不容易变得世故，愿意相信他人。";
+                problem = "情绪容易受外界起伏；遇到压力容易逃避；做长期规划能力偏弱；容易依赖他人，在意他人认可。";
+                suggest = "逐步建立情绪觉察，区分感受和事实；练习为小事承担责任，建立长期目标；保留天真的同时，学习设立人际边界，保护自己。";
+            }else{
+                diffText = "你的心理年龄明显低于实际年龄，内在童心特质突出。你拥有很强的感受力，讨厌复杂算计，厌恶冲突。";
+                strength = "感知敏锐，富有创造力；对生活保有热忱；内心纯粹，不容易变得功利；能发现普通人忽略的美好。";
+                problem = "面对挫折耐受度偏低；习惯回避矛盾；做决定容易情绪化；容易把期待寄托他人，期待别人保护自己。";
+                suggest = "学习直面冲突，练习表达诉求；建立现实感，区分理想化期待与真实世界；逐步练习独立决策，学会为选择承担后果；建立情绪缓冲方式。";
+            }
+            document.getElementById("result-diff-text").innerText = diffText;
+            document.getElementById("result-strength").innerText = strength;
+            document.getElementById("result-problem").innerText = problem;
+            document.getElementById("result-suggest").innerText = suggest;
+        }
+
+        function restartTest(){
+            current=0;
+            answers = Array(questionList.length).fill(null);
+            document.getElementById("page-result").classList.add("hidden");
+            document.getElementById("page-start").classList.remove("hidden");
+            document.getElementById("realAge").value = "";
+        }
+    </script>
+</body>
+</html>
